@@ -38,13 +38,12 @@ When another project adds the package from git, Unity copies `Packages/com.rosss
 
 1. Install **Unity 6** (this repo’s editor project is `6000.5`). The UPM package itself declares **2022.3** as the minimum. Set Player API Compatibility to **.NET Standard 2.1** (menu **NPC Demo → Use .NET Standard 2.1**).
 2. Clone this repository and open the folder as a Unity project (Unity Hub → Add → `NPC-demo`).
-3. Restore engine DLLs (GitHub CLI required):
+3. Restore engine DLLs, then either press Play in the Editor **or** run a Mac `.app` (still built by Unity; there is no console-only playable):
 
 ```bash
 bash scripts/restore-unity-libs.sh
+bash scripts/run-mac-demo.sh
 ```
-
-4. Press Play. The demo HUD spawns on an empty scene. Optional: menu **NPC Demo → Create Yard Scene** saves `Assets/NpcDemo/Scenes/NpcYard.unity`.
 
 You need **both** nupkgs. Archetypes does not embed Personality Engine. Do not also drop the PE zip beside the nupkg DLL (duplicate types).
 

@@ -9,7 +9,10 @@
 
 ## Play
 
-Restore DLLs from the repo root (`bash scripts/restore-unity-libs.sh`), open the Unity project, press Play. `NpcDemoHud` spawns itself on an empty scene.
+Restore DLLs from the repo root (`bash scripts/restore-unity-libs.sh`). Then either:
+
+- Open the Unity project and press Play, or
+- `bash scripts/run-mac-demo.sh` to build and open a Mac player (Unity Editor must still be installed for the build)
 
 Menu **NPC Demo → Create Yard Scene** writes `Assets/NpcDemo/Scenes/NpcYard.unity` for player builds.
 
