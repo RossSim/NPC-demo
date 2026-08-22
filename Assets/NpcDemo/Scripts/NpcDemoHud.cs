@@ -55,12 +55,30 @@ namespace RossSim.NpcDemo
 #endif
         }
 
+        static readonly Color PageGrey = new Color(0.47f, 0.47f, 0.47f, 1f);
+
         void Awake()
         {
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
+            FlattenView();
             left = CreateMind("Left", "village-smith", new Vector3(-1.5f, 0f, 0f));
             right = CreateMind("Right", "wilderness-scout", new Vector3(1.5f, 0f, 0f));
+        }
+
+        static void FlattenView()
+        {
+            RenderSettings.skybox = null;
+#if UNITY_6000_0_OR_NEWER
+            var cam = Camera.main != null ? Camera.main : FindAnyObjectByType<Camera>();
+#else
+            var cam = Camera.main != null ? Camera.main : FindObjectOfType<Camera>();
+#endif
+            if (cam == null)
+                return;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = PageGrey;
+            cam.cullingMask = 0;
         }
 
         void Update()
@@ -119,6 +137,11 @@ namespace RossSim.NpcDemo
         void OnGUI()
         {
             EnsureStyles();
+            var prev = GUI.color;
+            GUI.color = PageGrey;
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture, ScaleMode.StretchToFill, false);
+            GUI.color = prev;
+
             var old = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(zoom, zoom, 1f));
             var w = Screen.width / zoom;
@@ -148,6 +171,9 @@ namespace RossSim.NpcDemo
                     ? "Decay is realtime (fastest)."
                     : "Decay is about " + (1f / speed).ToString("0.0") + "× slower than realtime.",
                 wrapLabel);
+
+            GUILayout.Space(8);
+            NpcDemoChart.DrawPageLegend(wrapLabel);
 
             GUILayout.Space(6);
             if (GUILayout.Button("Randomize personas", GUILayout.Height(36)))

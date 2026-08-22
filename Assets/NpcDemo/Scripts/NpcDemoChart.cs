@@ -59,14 +59,38 @@ namespace RossSim.NpcDemo
             public int H;
         }
 
+        public static void DrawPageLegend(GUIStyle label)
+        {
+            GUILayout.BeginHorizontal();
+            LegendItem(Extraversion, "E Extraversion", label);
+            LegendItem(Conscientiousness, "C Conscientiousness", label);
+            LegendItem(Pleasure, "P Pleasure", label);
+            LegendItem(Arousal, "A Arousal", label);
+            LegendItem(Anger, "Anger", label);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+        }
+
+        static void LegendItem(Color32 color, string name, GUIStyle label)
+        {
+            var swatch = GUILayoutUtility.GetRect(14f, 14f, GUILayout.Width(14f), GUILayout.Height(14f));
+            if (Event.current.type == EventType.Repaint)
+            {
+                var old = GUI.color;
+                GUI.color = color;
+                GUI.DrawTexture(swatch, Texture2D.whiteTexture);
+                GUI.color = old;
+            }
+
+            GUILayout.Label(name, label, GUILayout.ExpandWidth(false));
+            GUILayout.Space(16f);
+        }
+
         public static void Draw(Rect rect, NpcDemoTrace trace, float elapsedSeconds)
         {
             GUI.Box(rect, GUIContent.none);
-            var legend = new Rect(rect.x + 100f, rect.y + 2f, rect.width - 220f, 18f);
-            GUI.Label(legend, "E   C   P   A   anger");
             var time = new Rect(rect.xMax - 110f, rect.y + 2f, 104f, 18f);
             GUI.Label(time, elapsedSeconds.ToString("0.0") + "s / 60s");
-            PaintSwatches(new Rect(rect.x + 6f, rect.y + 4f, 90f, 16f));
 
             var plot = new Rect(rect.x + 4f, rect.y + 22f, rect.width - 8f, rect.height - 26f);
             if (plot.width < 8f || plot.height < 8f)
@@ -196,25 +220,6 @@ namespace RossSim.NpcDemo
             if ((uint)x >= (uint)w || (uint)y >= (uint)h)
                 return;
             px[y * w + x] = color;
-        }
-
-        static void PaintSwatches(Rect r)
-        {
-            var x = r.x;
-            Swatch(ref x, r.y, Extraversion);
-            Swatch(ref x, r.y, Conscientiousness);
-            Swatch(ref x, r.y, Pleasure);
-            Swatch(ref x, r.y, Arousal);
-            Swatch(ref x, r.y, Anger);
-        }
-
-        static void Swatch(ref float x, float y, Color32 color)
-        {
-            var old = GUI.color;
-            GUI.color = color;
-            GUI.DrawTexture(new Rect(x, y + 4f, 10f, 10f), Texture2D.whiteTexture);
-            GUI.color = old;
-            x += 18f;
         }
     }
 }
