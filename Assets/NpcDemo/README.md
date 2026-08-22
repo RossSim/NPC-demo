@@ -9,10 +9,8 @@
 
 ## Play
 
-Restore DLLs from the repo root (`bash scripts/restore-unity-libs.sh`). Then either:
-
-- Open the Unity project and press Play, or
-- `bash scripts/run-mac-demo.sh` to build and open a Mac player (Unity Editor must still be installed for the build)
+- **No Unity:** download the macOS Apple silicon zip from [Releases](https://github.com/RossSim/NPC-demo/releases/latest) and open `NPC-demo.app`.
+- **From this repo:** restore DLLs (`bash scripts/restore-unity-libs.sh`), then Unity Play, or `bash scripts/run-mac-demo.sh` (Editor still required to *build*).
 
 Menu **NPC Demo → Create Yard Scene** writes `Assets/NpcDemo/Scenes/NpcYard.unity` for player builds.
 
@@ -20,7 +18,7 @@ Menu **NPC Demo → Create Yard Scene** writes `Assets/NpcDemo/Scenes/NpcYard.un
 
 - Seed two public catalog ids (default village-smith and wilderness-scout; **Randomize personas** picks two other catalog rows and a new event-caption set)
 - Zoom and a decay-speed slider (realtime is fastest; slow end is about 5× slower)
-- Line charts at 60 Hz, left edge fixed at t=0, compressed up to 60s
+- Thirteen event-caption beats; line charts at 60 Hz, left edge fixed at t=0, compressed up to 60s
 - Send host-tagged events (button captions change per beat; OCC kinds stay the same)
 - Pick a **pre-authored** line from mood/emotion bands
 - Rank `stay` / `leave` / `haggle` with `WeightActions`

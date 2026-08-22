@@ -27,6 +27,7 @@
 
 # Restored engine DLLs (not vendored)
 .restore/
+dist/
 Assets/Plugins/PersonalityEngine/*.dll
 Assets/Plugins/PersonalityEngine/*.dll.meta
 Assets/Plugins/PersonalityEngine/*.pdb

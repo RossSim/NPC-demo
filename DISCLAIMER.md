@@ -31,7 +31,11 @@ A product that wraps these libraries and makes those claims does so **at that pr
 
 This repository does not re-license Personality Engine or Archetypes. Those projects are MIT; you must keep their copyright notices and license terms when you copy their binaries or source. Cited authors, publishers, and institutions named in those projects have **not** endorsed this host.
 
-Unity is a trademark of Unity Technologies. This project is not affiliated with, endorsed by, or sponsored by Unity Technologies. You need your own Unity license to open the editor.
+Unity is a trademark of Unity Technologies. This project is not affiliated with, endorsed by, or sponsored by Unity Technologies.
+
+**Editor:** you need your own Unity license to open this repository in the Unity Editor.
+
+**Release player:** the macOS `.app` on GitHub Releases is a game you can run without installing Unity and without a Unity Editor license. It embeds a Unity player runtime, Personality Engine 0.6.1, and Archetypes 1.0.0 (both MIT). It is not notarized by Apple.
 
 ## Saves and untrusted data
 
