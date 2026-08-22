@@ -20,6 +20,7 @@ Menu **NPC Demo → Create Yard Scene** writes `Assets/NpcDemo/Scenes/NpcYard.un
 
 - Seed two public catalog ids (default village-smith and wilderness-scout; **Randomize personas** picks two other catalog rows and a new event-caption set)
 - Zoom and a decay-speed slider (realtime is fastest; slow end is about 5× slower)
+- Line charts at 60 Hz, left edge fixed at t=0, compressed up to 60s
 - Send host-tagged events (button captions change per beat; OCC kinds stay the same)
 - Pick a **pre-authored** line from mood/emotion bands
 - Rank `stay` / `leave` / `haggle` with `WeightActions`

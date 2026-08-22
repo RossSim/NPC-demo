@@ -6,6 +6,7 @@ namespace RossSim.NpcDemo
     /// <summary>
     /// Playable HUD. Demo-only. Spawns two catalog minds and sends host-tagged events.
     /// </summary>
+    [DefaultExecutionOrder(100)]
     public sealed class NpcDemoHud : MonoBehaviour
     {
         const float ZoomMin = 1f;
@@ -13,15 +14,22 @@ namespace RossSim.NpcDemo
         const float ZoomDefault = 2f;
         const float SpeedMin = 0.2f;
         const float SpeedMax = 1f;
+        const float PersonaWidth = 320f;
+        const float RowHeight = 200f;
 
         NpcMind left;
         NpcMind right;
+        readonly NpcDemoTrace leftTrace = new NpcDemoTrace();
+        readonly NpcDemoTrace rightTrace = new NpcDemoTrace();
         string lastJson;
         bool lastJsonWasLeft;
         string status = "Same buttons. Two starting minds. No language model.";
         NpcDemoBeat beat = NpcDemoBeats.All[0];
         float zoom = ZoomDefault;
         float speed = SpeedMax;
+        float elapsed;
+        bool capped;
+        float sampleAcc;
         Vector2 scroll;
         GUIStyle wrapButton;
         GUIStyle wrapLabel;
@@ -49,16 +57,44 @@ namespace RossSim.NpcDemo
 
         void Awake()
         {
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 60;
             left = CreateMind("Left", "village-smith", new Vector3(-1.5f, 0f, 0f));
             right = CreateMind("Right", "wilderness-scout", new Vector3(1.5f, 0f, 0f));
         }
 
         void Update()
         {
+            if (capped)
+            {
+                if (left != null)
+                    left.TickScale = 0f;
+                if (right != null)
+                    right.TickScale = 0f;
+                return;
+            }
+
             if (left != null)
                 left.TickScale = speed;
             if (right != null)
                 right.TickScale = speed;
+
+            var step = 1f / NpcDemoTrace.SampleHz;
+            sampleAcc += Time.deltaTime;
+            while (sampleAcc >= step && leftTrace.Count < NpcDemoTrace.MaxSamples)
+            {
+                sampleAcc -= step;
+                leftTrace.Push(left);
+                rightTrace.Push(right);
+            }
+
+            elapsed = leftTrace.Count / NpcDemoTrace.SampleHz;
+            if (leftTrace.Count >= NpcDemoTrace.MaxSamples)
+            {
+                elapsed = NpcDemoTrace.MaxSeconds;
+                capped = true;
+                status = "60s cap. Randomize personas to start a new run.";
+            }
         }
 
         NpcMind CreateMind(string name, string presetId, Vector3 pos)
@@ -118,20 +154,20 @@ namespace RossSim.NpcDemo
                 RandomizePair();
 
             GUILayout.Space(8);
-            GUILayout.BeginHorizontal();
-            DrawColumn(left);
-            GUILayout.Space(16);
-            DrawColumn(right);
-            GUILayout.EndHorizontal();
+            DrawPersonaRow(left, leftTrace);
+            GUILayout.Space(8);
+            DrawPersonaRow(right, rightTrace);
 
             GUILayout.Space(10);
             GUILayout.Label("This beat: " + beat.Title + " — same OCC kinds, different captions. You still choose the tag.", wrapLabel);
 
+            GUI.enabled = !capped;
             DrawBeatButton(beat.Anger, beat.AngerNote, HostEventKind.Anger);
             DrawBeatButton(beat.Gratitude, beat.GratitudeNote, HostEventKind.Gratitude);
             DrawBeatButton(beat.Threat, beat.ThreatNote, HostEventKind.Threat);
             DrawBeatButton(beat.ThreatPassed, beat.ThreatPassedNote, HostEventKind.ThreatPassed);
             DrawBeatButton(beat.NeedMet, beat.NeedMetNote, HostEventKind.NeedMet);
+            GUI.enabled = true;
 
             GUILayout.Space(8);
             GUILayout.BeginHorizontal();
@@ -160,6 +196,19 @@ namespace RossSim.NpcDemo
             GUI.matrix = old;
         }
 
+        void DrawPersonaRow(NpcMind mind, NpcDemoTrace trace)
+        {
+            GUILayout.BeginHorizontal(GUILayout.Height(RowHeight));
+            DrawColumn(mind);
+            var chart = GUILayoutUtility.GetRect(
+                80f,
+                RowHeight,
+                GUILayout.ExpandWidth(true),
+                GUILayout.Height(RowHeight));
+            NpcDemoChart.Draw(chart, trace, elapsed);
+            GUILayout.EndHorizontal();
+        }
+
         void DrawBeatButton(string caption, string note, HostEventKind kind)
         {
             if (GUILayout.Button(caption, wrapButton, GUILayout.Height(40), GUILayout.ExpandWidth(true)))
@@ -168,6 +217,8 @@ namespace RossSim.NpcDemo
 
         void Pulse(HostEventKind kind, string note)
         {
+            if (capped)
+                return;
             left.Notify(kind, 0.8f, "player");
             right.Notify(kind, 0.8f, "player");
             status = note;
@@ -175,7 +226,11 @@ namespace RossSim.NpcDemo
 
         void DrawColumn(NpcMind mind)
         {
-            GUILayout.BeginVertical(wrapBox, GUILayout.MinWidth(280), GUILayout.ExpandWidth(true));
+            GUILayout.BeginVertical(
+                wrapBox,
+                GUILayout.Width(PersonaWidth),
+                GUILayout.Height(RowHeight),
+                GUILayout.MaxHeight(RowHeight));
             GUILayout.Label(NpcPreset.DisplayName(mind.PresetId) + "  (" + mind.PresetId + ")", wrapLabel);
             GUILayout.Label(string.Format(
                 "E {0:0.00}   C {1:0.00}   P {2:0.00}   A {3:0.00}   anger {4:0.00}",
@@ -184,6 +239,7 @@ namespace RossSim.NpcDemo
             var move = NpcDemoLines.TopMove(weights);
             GUILayout.Label("Ranked move: " + move, wrapLabel);
             GUILayout.Label(NpcDemoLines.Pick(mind.PresetId, mind.Arousal, mind.Anger, move), wrapLabel);
+            GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
         }
 
@@ -208,9 +264,19 @@ namespace RossSim.NpcDemo
                 next = (next + 1) % NpcDemoBeats.All.Length;
             beat = NpcDemoBeats.All[next];
             lastJson = null;
+            ResetRun();
 
             status = NpcPreset.DisplayName(ids[a]) + " and " + NpcPreset.DisplayName(ids[b])
                      + ". Beat: " + beat.Title + ". Button captions changed; OCC kinds did not.";
+        }
+
+        void ResetRun()
+        {
+            elapsed = 0f;
+            capped = false;
+            leftTrace.Clear();
+            rightTrace.Clear();
+            sampleAcc = 0f;
         }
     }
 }
