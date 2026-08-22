@@ -1,0 +1,6 @@
+<linker>
+  <assembly fullname="Archetypes.Core" preserve="all" />
+  <assembly fullname="PersonalityEngine.Core" preserve="all" />
+  <assembly fullname="System.Text.Json" preserve="all" />
+  <assembly fullname="RossSim.NpcHost" preserve="all" />
+</linker>

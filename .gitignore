@@ -1,0 +1,38 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# IDE / OS
+.vs/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+.DS_Store
+
+# Restored engine DLLs (not vendored)
+.restore/
+Assets/Plugins/PersonalityEngine/*.dll
+Assets/Plugins/PersonalityEngine/*.dll.meta
+Assets/Plugins/PersonalityEngine/*.pdb
+Assets/Plugins/PersonalityEngine/*.xml
+
+# Crash / addressable leftovers
+sysinfo.txt
+*.stackdump
+InitTestScene*.unity*

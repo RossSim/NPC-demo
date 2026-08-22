@@ -1,0 +1,16 @@
+{
+  "name": "RossSim.NpcDemo",
+  "rootNamespace": "RossSim.NpcDemo",
+  "references": [
+    "RossSim.NpcHost"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

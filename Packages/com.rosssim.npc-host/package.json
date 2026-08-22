@@ -1,0 +1,21 @@
+{
+  "name": "com.rosssim.npc-host",
+  "version": "0.1.0",
+  "displayName": "NPC Host",
+  "description": "Unity adapter for Personality Engine and Archetypes: one mind per GameObject, ticks, host events, and JSON persist. Not a psychology engine and not a language-model SDK.",
+  "unity": "2022.3",
+  "documentationUrl": "https://github.com/RossSim/NPC-demo/blob/main/Packages/com.rosssim.npc-host/README.md",
+  "changelogUrl": "https://github.com/RossSim/NPC-demo/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/RossSim/NPC-demo/blob/main/LICENSE",
+  "license": "MIT",
+  "author": {
+    "name": "RossSim",
+    "url": "https://github.com/RossSim"
+  },
+  "keywords": [
+    "npc",
+    "personality",
+    "affect",
+    "archetypes"
+  ]
+}

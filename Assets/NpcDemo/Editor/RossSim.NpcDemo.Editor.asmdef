@@ -1,0 +1,19 @@
+{
+  "name": "RossSim.NpcDemo.Editor",
+  "rootNamespace": "RossSim.NpcDemo.Editor",
+  "references": [
+    "RossSim.NpcDemo",
+    "RossSim.NpcHost"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
