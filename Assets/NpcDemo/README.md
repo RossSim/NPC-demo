@@ -9,7 +9,7 @@
 
 ## Play
 
-- **No Unity:** download the macOS Apple silicon zip from [Releases](https://github.com/RossSim/NPC-demo/releases/latest) and open `NPC-demo.app`.
+- **No Unity:** download the macOS universal zip from [Releases](https://github.com/RossSim/NPC-demo/releases/latest) and open `NPC-demo.app`.
 - **From this repo:** restore DLLs (`bash scripts/restore-unity-libs.sh`), then Unity Play, or `bash scripts/run-mac-demo.sh` (Editor still required to *build*).
 
 Menu **NPC Demo → Create Yard Scene** writes `Assets/NpcDemo/Scenes/NpcYard.unity` for player builds.

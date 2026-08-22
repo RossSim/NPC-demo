@@ -6,7 +6,7 @@ Current cut: **0.1.0**. Personality Engine **0.6.1**, Archetypes **1.0.0**.
 
 ## Playable (no Unity install)
 
-The GitHub Release **macOS Apple silicon** zip is the demo people can run without the Unity Editor. Rebuild the player, then zip:
+The GitHub Release **macOS universal** zip is the demo people can run without the Unity Editor. Rebuild the player, then zip:
 
 ```bash
 bash scripts/restore-unity-libs.sh
@@ -14,7 +14,7 @@ bash scripts/run-mac-demo.sh --rebuild
 bash scripts/package-macos-release.sh
 ```
 
-`package-macos-release.sh` writes `dist/NPC-demo-<version>-macos-apple-silicon.zip` (the `.app` plus LICENSE, disclaimer, and a play note). The zip is gitignored.
+`package-macos-release.sh` writes `dist/NPC-demo-<version>-macos-universal.zip` (the `.app` plus LICENSE, disclaimer, and a play note). The zip is gitignored.
 
 ## Tag and GitHub Release
 

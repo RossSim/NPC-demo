@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${VERSION:-0.1.0}"
 APP="$ROOT/Builds/macOS/NPC-demo.app"
-NAME="NPC-demo-${VERSION}-macos-apple-silicon"
+NAME="NPC-demo-${VERSION}-macos-universal"
 STAGE="$ROOT/dist/${NAME}"
 ZIP="$ROOT/dist/${NAME}.zip"
 
@@ -21,7 +21,7 @@ cp -R "$APP" "$STAGE/"
 cp "$ROOT/LICENSE" "$STAGE/LICENSE.txt"
 cp "$ROOT/DISCLAIMER.md" "$STAGE/"
 cat > "$STAGE/PLAY.txt" <<EOF
-NPC-demo ${VERSION} — macOS Apple silicon player
+NPC-demo ${VERSION} — macOS player (universal: Apple silicon and Intel)
 
 Open NPC-demo.app. You do not need the Unity Editor.
 

@@ -11,9 +11,9 @@ There is **no language model** here. Demo lines are tagged stems. A game that us
 
 ## Play without Unity (macOS)
 
-Download **`NPC-demo-*-macos-apple-silicon.zip`** from [Releases](https://github.com/RossSim/NPC-demo/releases/latest). Unzip and open `NPC-demo.app`. You do **not** need the Unity Editor or a Unity license to run that player.
+Download **`NPC-demo-*-macos-universal.zip`** from [Releases](https://github.com/RossSim/NPC-demo/releases/latest). Unzip and open `NPC-demo.app`. You do **not** need the Unity Editor or a Unity license to run that player.
 
-The build is **unsigned**. On first launch, right-click the app → **Open** (or System Settings → Privacy & Security). Apple silicon only. It is a game demo, not a test; see [Disclaimer](DISCLAIMER.md).
+The build is **unsigned**. On first launch, right-click the app → **Open** (or System Settings → Privacy & Security). Universal binary (Apple silicon and Intel). It is a game demo, not a test; see [Disclaimer](DISCLAIMER.md).
 
 ## Package vs demo
 
