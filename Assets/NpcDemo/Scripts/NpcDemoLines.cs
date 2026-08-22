@@ -5,31 +5,23 @@ namespace RossSim.NpcDemo
 {
     /// <summary>
     /// Pre-authored stems. The demo does not call a language model.
+    /// Variants are keyed by preset id so two randomized jobs do not share a mouth.
     /// </summary>
     public static class NpcDemoLines
     {
         public static string Pick(string presetId, float arousal, float anger, string rankedMove)
         {
-            var smith = presetId == "village-smith";
+            var name = NpcPreset.DisplayName(presetId);
+            var slot = Slot(presetId);
             if (anger >= 0.45f)
-                return smith
-                    ? "The hammer stays in his hand. \"Say that again.\""
-                    : "She does not look at you. \"Keep walking.\"";
+                return AngerLine(name, slot);
             if (arousal >= 0.55f)
-                return smith
-                    ? "He talks fast over the anvil. \"Make it quick.\""
-                    : "Weight on the balls of her feet. \"What.\"";
+                return ArousalLine(name, slot);
             if (rankedMove == "leave")
-                return smith
-                    ? "He nods at the door. \"Forge is closed.\""
-                    : "Already half turned. \"I have a ridge to walk.\"";
+                return LeaveLine(name, slot);
             if (rankedMove == "haggle")
-                return smith
-                    ? "\"Price is the price. You heard it.\""
-                    : "\"I don't sell. I scout.\"";
-            return smith
-                ? "Steady hands. \"Need a shoe, or just talk?\""
-                : "Quiet. \"Tracks are south. That's all.\"";
+                return HaggleLine(name, slot);
+            return CalmLine(name, slot);
         }
 
         public static string TopMove(IReadOnlyDictionary<string, float> weights)
@@ -48,6 +40,73 @@ namespace RossSim.NpcDemo
             }
 
             return best;
+        }
+
+        static int Slot(string presetId)
+        {
+            unchecked
+            {
+                var h = 17;
+                if (presetId != null)
+                {
+                    for (var i = 0; i < presetId.Length; i++)
+                        h = h * 31 + presetId[i];
+                }
+
+                if (h < 0)
+                    h = -h;
+                return h % 3;
+            }
+        }
+
+        static string AngerLine(string name, int slot)
+        {
+            switch (slot)
+            {
+                case 0: return name + " doesn't look at you. \"Don't.\"";
+                case 1: return name + " goes still. \"Say that again.\"";
+                default: return name + " cuts you off. \"We're done.\"";
+            }
+        }
+
+        static string ArousalLine(string name, int slot)
+        {
+            switch (slot)
+            {
+                case 0: return name + " talks fast. \"Make it quick.\"";
+                case 1: return name + " shifts their weight. \"What.\"";
+                default: return name + " keeps their hands busy. \"Not now.\"";
+            }
+        }
+
+        static string LeaveLine(string name, int slot)
+        {
+            switch (slot)
+            {
+                case 0: return name + " nods at the door. \"Closed.\"";
+                case 1: return name + " is already half turned. \"I have work.\"";
+                default: return name + " steps back. \"Later.\"";
+            }
+        }
+
+        static string HaggleLine(string name, int slot)
+        {
+            switch (slot)
+            {
+                case 0: return name + ": \"Price is the price.\"";
+                case 1: return name + ": \"That's the offer. Take it.\"";
+                default: return name + ": \"I don't owe you a bargain.\"";
+            }
+        }
+
+        static string CalmLine(string name, int slot)
+        {
+            switch (slot)
+            {
+                case 0: return name + " waits. \"Talk, or work?\"";
+                case 1: return name + " is quiet. \"I'm listening.\"";
+                default: return name + " glances up. \"Go on.\"";
+            }
         }
     }
 }

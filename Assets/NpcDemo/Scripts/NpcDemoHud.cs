@@ -8,10 +8,24 @@ namespace RossSim.NpcDemo
     /// </summary>
     public sealed class NpcDemoHud : MonoBehaviour
     {
-        NpcMind smith;
-        NpcMind scout;
+        const float ZoomMin = 1f;
+        const float ZoomMax = 3f;
+        const float ZoomDefault = 2f;
+        const float SpeedMin = 0.2f;
+        const float SpeedMax = 1f;
+
+        NpcMind left;
+        NpcMind right;
         string lastJson;
+        bool lastJsonWasLeft;
         string status = "Same buttons. Two starting minds. No language model.";
+        NpcDemoBeat beat = NpcDemoBeats.All[0];
+        float zoom = ZoomDefault;
+        float speed = SpeedMax;
+        Vector2 scroll;
+        GUIStyle wrapButton;
+        GUIStyle wrapLabel;
+        GUIStyle wrapBox;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoSpawn()
@@ -35,8 +49,16 @@ namespace RossSim.NpcDemo
 
         void Awake()
         {
-            smith = CreateMind("Smith", "village-smith", new Vector3(-1.5f, 0f, 0f));
-            scout = CreateMind("Scout", "wilderness-scout", new Vector3(1.5f, 0f, 0f));
+            left = CreateMind("Left", "village-smith", new Vector3(-1.5f, 0f, 0f));
+            right = CreateMind("Right", "wilderness-scout", new Vector3(1.5f, 0f, 0f));
+        }
+
+        void Update()
+        {
+            if (left != null)
+                left.TickScale = speed;
+            if (right != null)
+                right.TickScale = speed;
         }
 
         NpcMind CreateMind(string name, string presetId, Vector3 pos)
@@ -49,71 +71,146 @@ namespace RossSim.NpcDemo
             return mind;
         }
 
+        void EnsureStyles()
+        {
+            if (wrapButton != null)
+                return;
+            wrapButton = new GUIStyle(GUI.skin.button) { wordWrap = true };
+            wrapLabel = new GUIStyle(GUI.skin.label) { wordWrap = true };
+            wrapBox = new GUIStyle(GUI.skin.box) { wordWrap = true };
+        }
+
         void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(16, 16, Screen.width - 32, Screen.height - 32));
-            GUILayout.Label("NPC-demo — Personality Engine + Archetypes host");
-            GUILayout.Label(status);
+            EnsureStyles();
+            var old = GUI.matrix;
+            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(zoom, zoom, 1f));
+            var w = Screen.width / zoom;
+            var h = Screen.height / zoom;
+            GUILayout.BeginArea(new Rect(12f, 12f, w - 24f, h - 24f));
+            scroll = GUILayout.BeginScrollView(scroll);
+
+            GUILayout.Label("NPC-demo — Personality Engine + Archetypes host", wrapLabel);
+            GUILayout.Label(status, wrapLabel);
+            GUILayout.Space(6);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Zoom " + zoom.ToString("0.0") + "×", GUILayout.Width(110));
+            zoom = GUILayout.HorizontalSlider(zoom, ZoomMin, ZoomMax);
+            if (GUILayout.Button("Reset", GUILayout.Width(70)))
+                zoom = ZoomDefault;
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Speed (decay)", GUILayout.Width(110));
+            GUILayout.Label("slow", GUILayout.Width(40));
+            speed = GUILayout.HorizontalSlider(speed, SpeedMin, SpeedMax);
+            GUILayout.Label("fast", GUILayout.Width(40));
+            GUILayout.EndHorizontal();
+            GUILayout.Label(
+                speed >= 0.99f
+                    ? "Decay is realtime (fastest)."
+                    : "Decay is about " + (1f / speed).ToString("0.0") + "× slower than realtime.",
+                wrapLabel);
+
+            GUILayout.Space(6);
+            if (GUILayout.Button("Randomize personas", GUILayout.Height(36)))
+                RandomizePair();
+
             GUILayout.Space(8);
-
             GUILayout.BeginHorizontal();
-            DrawColumn(smith, "Village smith");
-            GUILayout.Space(24);
-            DrawColumn(scout, "Wilderness scout");
+            DrawColumn(left);
+            GUILayout.Space(16);
+            DrawColumn(right);
             GUILayout.EndHorizontal();
 
-            GUILayout.Space(12);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Insult both (anger)"))
-                Pulse(HostEventKind.Anger, "They hear it as yours.");
-            if (GUILayout.Button("Gift both (gratitude)"))
-                Pulse(HostEventKind.Gratitude, "A gift, tagged as gratitude — the engine did not infer that.");
-            if (GUILayout.Button("Threat"))
-                Pulse(HostEventKind.Threat, "Danger in the room.");
-            if (GUILayout.Button("Threat passed"))
-                Pulse(HostEventKind.ThreatPassed, "The danger is gone. Mood still has to catch up.");
-            if (GUILayout.Button("Need met"))
-                Pulse(HostEventKind.NeedMet, "A need was satisfied.");
-            GUILayout.EndHorizontal();
+            GUILayout.Space(10);
+            GUILayout.Label("This beat: " + beat.Title + " — same OCC kinds, different captions. You still choose the tag.", wrapLabel);
 
+            DrawBeatButton(beat.Anger, beat.AngerNote, HostEventKind.Anger);
+            DrawBeatButton(beat.Gratitude, beat.GratitudeNote, HostEventKind.Gratitude);
+            DrawBeatButton(beat.Threat, beat.ThreatNote, HostEventKind.Threat);
+            DrawBeatButton(beat.ThreatPassed, beat.ThreatPassedNote, HostEventKind.ThreatPassed);
+            DrawBeatButton(beat.NeedMet, beat.NeedMetNote, HostEventKind.NeedMet);
+
+            GUILayout.Space(8);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Save smith JSON"))
+            if (GUILayout.Button("Save " + NpcPreset.DisplayName(left.PresetId) + " JSON", GUILayout.Height(32)))
             {
-                lastJson = smith.SaveToJson();
-                status = "Saved smith persist blob (" + lastJson.Length + " chars). Load applies to the smith after rebuild.";
+                lastJson = left.SaveToJson();
+                lastJsonWasLeft = true;
+                status = "Saved persist blob (" + lastJson.Length + " chars). Load rebuilds that mind first.";
             }
+
             GUI.enabled = lastJson != null;
-            if (GUILayout.Button("Load into smith"))
+            var loadTarget = lastJsonWasLeft ? left : right;
+            var loadName = loadTarget == null ? "mind" : NpcPreset.DisplayName(loadTarget.PresetId);
+            if (GUILayout.Button("Load into " + loadName, GUILayout.Height(32)))
             {
-                smith.LoadFromJson(lastJson);
+                loadTarget.LoadFromJson(lastJson);
                 status = "Imported. Composition was rebuilt first.";
             }
+
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("Game numbers, not a test. See DISCLAIMER.md.");
+            GUILayout.Label("Game numbers, not a test. See DISCLAIMER.md.", wrapLabel);
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
+            GUI.matrix = old;
+        }
+
+        void DrawBeatButton(string caption, string note, HostEventKind kind)
+        {
+            if (GUILayout.Button(caption, wrapButton, GUILayout.Height(40), GUILayout.ExpandWidth(true)))
+                Pulse(kind, note);
         }
 
         void Pulse(HostEventKind kind, string note)
         {
-            smith.Notify(kind, 0.8f, "player");
-            scout.Notify(kind, 0.8f, "player");
+            left.Notify(kind, 0.8f, "player");
+            right.Notify(kind, 0.8f, "player");
             status = note;
         }
 
-        void DrawColumn(NpcMind mind, string title)
+        void DrawColumn(NpcMind mind)
         {
-            GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(360));
-            GUILayout.Label(title + "  (" + mind.PresetId + ")");
+            GUILayout.BeginVertical(wrapBox, GUILayout.MinWidth(280), GUILayout.ExpandWidth(true));
+            GUILayout.Label(NpcPreset.DisplayName(mind.PresetId) + "  (" + mind.PresetId + ")", wrapLabel);
             GUILayout.Label(string.Format(
                 "E {0:0.00}   C {1:0.00}   P {2:0.00}   A {3:0.00}   anger {4:0.00}",
-                mind.Extraversion, mind.Conscientiousness, mind.Pleasure, mind.Arousal, mind.Anger));
+                mind.Extraversion, mind.Conscientiousness, mind.Pleasure, mind.Arousal, mind.Anger), wrapLabel);
             var weights = mind.Weight("stay", "leave", "haggle");
             var move = NpcDemoLines.TopMove(weights);
-            GUILayout.Label("Ranked move: " + move);
-            GUILayout.Label(NpcDemoLines.Pick(mind.PresetId, mind.Arousal, mind.Anger, move));
+            GUILayout.Label("Ranked move: " + move, wrapLabel);
+            GUILayout.Label(NpcDemoLines.Pick(mind.PresetId, mind.Arousal, mind.Anger, move), wrapLabel);
             GUILayout.EndVertical();
+        }
+
+        void RandomizePair()
+        {
+            var ids = NpcPreset.AllIds;
+            if (ids == null || ids.Count < 2)
+                return;
+
+            var a = Random.Range(0, ids.Count);
+            var b = Random.Range(0, ids.Count);
+            if (b == a)
+                b = (b + 1) % ids.Count;
+
+            var seedA = Random.Range(1, int.MaxValue);
+            var seedB = Random.Range(1, int.MaxValue);
+            left.Configure(ids[a], default, seedA);
+            right.Configure(ids[b], default, seedB);
+
+            var next = Random.Range(0, NpcDemoBeats.All.Length);
+            if (NpcDemoBeats.All.Length > 1 && ReferenceEquals(NpcDemoBeats.All[next], beat))
+                next = (next + 1) % NpcDemoBeats.All.Length;
+            beat = NpcDemoBeats.All[next];
+            lastJson = null;
+
+            status = NpcPreset.DisplayName(ids[a]) + " and " + NpcPreset.DisplayName(ids[b])
+                     + ". Beat: " + beat.Title + ". Button captions changed; OCC kinds did not.";
         }
     }
 }

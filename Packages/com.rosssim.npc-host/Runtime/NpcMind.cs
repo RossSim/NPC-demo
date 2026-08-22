@@ -35,11 +35,20 @@ namespace RossSim.NpcHost
         public float Extraversion => Read(OceanPersonality.ExtraversionKey);
         public float Conscientiousness => Read(OceanPersonality.ConscientiousnessKey);
 
+        /// <summary>
+        /// Multiplier on idle <c>Tick(dt)</c>. 1 is realtime; 0.2 is about five times slower.
+        /// Does not change the size of a host-tagged event, only how fast numbers decay afterward.
+        /// </summary>
+        public float TickScale { get; set; } = 1f;
+
         void Awake() => Rebuild();
 
         void Update()
         {
-            engine?.Tick(Time.deltaTime);
+            if (engine == null)
+                return;
+            var scale = TickScale < 0f ? 0f : TickScale;
+            engine.Tick(Time.deltaTime * scale);
         }
 
         public void Configure(string id, JitterTier jitterTier = JitterTier.Named, int seed = 0)
