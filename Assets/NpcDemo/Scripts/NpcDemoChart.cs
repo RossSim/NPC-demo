@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RossSim.NpcHost;
 using UnityEngine;
 
@@ -39,14 +40,24 @@ namespace RossSim.NpcDemo
     {
         const float YMin = -0.2f;
         const float YMax = 1.2f;
-        const float LineWidth = 2f;
 
-        static readonly Color Extraversion = new Color(0.25f, 0.75f, 0.95f);
-        static readonly Color Conscientiousness = new Color(0.75f, 0.75f, 0.78f);
-        static readonly Color Pleasure = new Color(0.35f, 0.82f, 0.40f);
-        static readonly Color Arousal = new Color(0.95f, 0.62f, 0.20f);
-        static readonly Color Anger = new Color(0.92f, 0.28f, 0.28f);
-        static readonly Color Grid = new Color(1f, 1f, 1f, 0.18f);
+        static readonly Color32 Extraversion = new Color32(64, 191, 242, 255);
+        static readonly Color32 Conscientiousness = new Color32(191, 191, 199, 255);
+        static readonly Color32 Pleasure = new Color32(89, 209, 102, 255);
+        static readonly Color32 Arousal = new Color32(242, 158, 51, 255);
+        static readonly Color32 Anger = new Color32(235, 71, 71, 255);
+        static readonly Color32 Grid = new Color32(255, 255, 255, 46);
+        static readonly Color32 Background = new Color32(28, 28, 28, 255);
+
+        static readonly Dictionary<NpcDemoTrace, PlotBuf> Buffers = new Dictionary<NpcDemoTrace, PlotBuf>();
+
+        sealed class PlotBuf
+        {
+            public Texture2D Tex;
+            public Color32[] Pixels;
+            public int W;
+            public int H;
+        }
 
         public static void Draw(Rect rect, NpcDemoTrace trace, float elapsedSeconds)
         {
@@ -58,22 +69,133 @@ namespace RossSim.NpcDemo
             PaintSwatches(new Rect(rect.x + 6f, rect.y + 4f, 90f, 16f));
 
             var plot = new Rect(rect.x + 4f, rect.y + 22f, rect.width - 8f, rect.height - 26f);
+            if (plot.width < 8f || plot.height < 8f)
+                return;
             if (Event.current.type != EventType.Repaint)
                 return;
 
-            GUI.BeginGroup(plot);
-            var local = new Rect(0f, 0f, plot.width, plot.height);
-            DrawGrid(local);
-            if (trace != null && trace.Count >= 2)
+            var buf = Rasterize(trace, Mathf.Max(8, (int)plot.width), Mathf.Max(8, (int)plot.height));
+            GUI.BeginClip(plot);
+            GUI.DrawTexture(new Rect(0f, 0f, plot.width, plot.height), buf.Tex, ScaleMode.StretchToFill, false);
+            GUI.EndClip();
+        }
+
+        static PlotBuf Rasterize(NpcDemoTrace trace, int w, int h)
+        {
+            var key = trace ?? DummyKey;
+            if (!Buffers.TryGetValue(key, out var buf))
             {
-                DrawSeries(local, trace.Extraversion, trace.Count, Extraversion);
-                DrawSeries(local, trace.Conscientiousness, trace.Count, Conscientiousness);
-                DrawSeries(local, trace.Pleasure, trace.Count, Pleasure);
-                DrawSeries(local, trace.Arousal, trace.Count, Arousal);
-                DrawSeries(local, trace.Anger, trace.Count, Anger);
+                buf = new PlotBuf();
+                Buffers[key] = buf;
             }
 
-            GUI.EndGroup();
+            if (buf.Tex == null || buf.W != w || buf.H != h)
+            {
+                if (buf.Tex != null)
+                    Object.Destroy(buf.Tex);
+                buf.W = w;
+                buf.H = h;
+                buf.Pixels = new Color32[w * h];
+                buf.Tex = new Texture2D(w, h, TextureFormat.RGBA32, false)
+                {
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+
+            var px = buf.Pixels;
+            var bg = Background;
+            for (var i = 0; i < px.Length; i++)
+                px[i] = bg;
+
+            DrawHLine(px, w, h, YToPixel(h, 0f), Grid);
+            DrawHLine(px, w, h, YToPixel(h, 0.5f), Grid);
+            DrawHLine(px, w, h, YToPixel(h, 1f), Grid);
+
+            if (trace != null && trace.Count >= 2)
+            {
+                DrawSeries(px, w, h, trace.Extraversion, trace.Count, Extraversion);
+                DrawSeries(px, w, h, trace.Conscientiousness, trace.Count, Conscientiousness);
+                DrawSeries(px, w, h, trace.Pleasure, trace.Count, Pleasure);
+                DrawSeries(px, w, h, trace.Arousal, trace.Count, Arousal);
+                DrawSeries(px, w, h, trace.Anger, trace.Count, Anger);
+            }
+
+            buf.Tex.SetPixels32(px);
+            buf.Tex.Apply(false, false);
+            return buf;
+        }
+
+        static readonly NpcDemoTrace DummyKey = new NpcDemoTrace();
+
+        static void DrawSeries(Color32[] px, int w, int h, float[] data, int count, Color32 color)
+        {
+            var lastX = 0;
+            var lastY = YToPixel(h, data[0]);
+            var denom = (float)(w - 1);
+            for (var x = 1; x < w; x++)
+            {
+                var i = (int)(x / denom * (count - 1));
+                if (i >= count)
+                    i = count - 1;
+                var y = YToPixel(h, data[i]);
+                DrawClippedLine(px, w, h, lastX, lastY, x, y, color);
+                lastX = x;
+                lastY = y;
+            }
+        }
+
+        static int YToPixel(int h, float value)
+        {
+            var y01 = Mathf.Clamp01(Mathf.InverseLerp(YMin, YMax, value));
+            return Mathf.Clamp((int)(y01 * (h - 1)), 0, h - 1);
+        }
+
+        static void DrawHLine(Color32[] px, int w, int h, int y, Color32 color)
+        {
+            if ((uint)y >= (uint)h)
+                return;
+            var row = y * w;
+            for (var x = 0; x < w; x++)
+                px[row + x] = color;
+        }
+
+        static void DrawClippedLine(Color32[] px, int w, int h, int x0, int y0, int x1, int y1, Color32 color)
+        {
+            var dx = Mathf.Abs(x1 - x0);
+            var dy = Mathf.Abs(y1 - y0);
+            var sx = x0 < x1 ? 1 : -1;
+            var sy = y0 < y1 ? 1 : -1;
+            var err = dx - dy;
+            var x = x0;
+            var y = y0;
+            while (true)
+            {
+                Put(px, w, h, x, y, color);
+                Put(px, w, h, x, y + 1, color);
+                if (x == x1 && y == y1)
+                    break;
+                var e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x += sx;
+                }
+
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y += sy;
+                }
+            }
+        }
+
+        static void Put(Color32[] px, int w, int h, int x, int y, Color32 color)
+        {
+            if ((uint)x >= (uint)w || (uint)y >= (uint)h)
+                return;
+            px[y * w + x] = color;
         }
 
         static void PaintSwatches(Rect r)
@@ -86,67 +208,13 @@ namespace RossSim.NpcDemo
             Swatch(ref x, r.y, Anger);
         }
 
-        static void Swatch(ref float x, float y, Color color)
+        static void Swatch(ref float x, float y, Color32 color)
         {
             var old = GUI.color;
             GUI.color = color;
             GUI.DrawTexture(new Rect(x, y + 4f, 10f, 10f), Texture2D.whiteTexture);
             GUI.color = old;
             x += 18f;
-        }
-
-        static void DrawGrid(Rect rect)
-        {
-            DrawLine(XPoint(rect, 0f), XPoint(rect, 1f), Grid, 1f);
-            DrawLine(YPoint(rect, 0.5f, true), YPoint(rect, 0.5f, false), Grid, 1f);
-            DrawLine(YPoint(rect, 0f, true), YPoint(rect, 0f, false), Grid, 1f);
-        }
-
-        static Vector2 XPoint(Rect rect, float t) =>
-            new Vector2(rect.x + t * rect.width, rect.yMax);
-
-        static Vector2 YPoint(Rect rect, float value, bool left)
-        {
-            var y01 = Mathf.InverseLerp(YMin, YMax, value);
-            var y = rect.yMax - y01 * rect.height;
-            return new Vector2(left ? rect.x : rect.xMax, y);
-        }
-
-        static void DrawSeries(Rect rect, float[] data, int count, Color color)
-        {
-            var segments = Mathf.Min(count - 1, Mathf.Max(1, (int)rect.width));
-            var denom = (float)segments;
-            var last = Point(rect, 0, count, data[0]);
-            for (var s = 1; s <= segments; s++)
-            {
-                var i = (int)(s / denom * (count - 1));
-                var next = Point(rect, i, count, data[i]);
-                DrawLine(last, next, color, LineWidth);
-                last = next;
-            }
-        }
-
-        static Vector2 Point(Rect rect, int i, int count, float value)
-        {
-            var t = count <= 1 ? 0f : i / (float)(count - 1);
-            var y01 = Mathf.InverseLerp(YMin, YMax, value);
-            return new Vector2(rect.x + t * rect.width, rect.yMax - y01 * rect.height);
-        }
-
-        static void DrawLine(Vector2 a, Vector2 b, Color color, float thickness)
-        {
-            var delta = b - a;
-            var length = delta.magnitude;
-            if (length < 0.25f)
-                return;
-            var angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-            var matrix = GUI.matrix;
-            var saved = GUI.color;
-            GUI.color = color;
-            GUIUtility.RotateAroundPivot(angle, a);
-            GUI.DrawTexture(new Rect(a.x, a.y - thickness * 0.5f, length, thickness), Texture2D.whiteTexture);
-            GUI.matrix = matrix;
-            GUI.color = saved;
         }
     }
 }
